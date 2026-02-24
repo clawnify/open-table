@@ -1,39 +1,51 @@
 # Table App
 
-Data table with CRUD, sorting, filtering, pagination, and CSV export. Built with Hono + Cloudflare Workers + D1.
+Data table with CRUD, sorting, filtering, pagination, and CSV export. Built with Hono + SQLite. Runs locally with zero cloud dependencies.
 
-## Setup
+## Quick Start
 
-1. Install dependencies:
-   ```bash
-   pnpm install
-   ```
+```bash
+npm install
+npm start
+```
 
-2. Create the D1 database:
-   ```bash
-   npx wrangler d1 create table-app-db
-   ```
+Open `http://localhost:3000` in your browser. Data persists in `data.db`.
 
-3. Update `database_id` in `wrangler.toml` with the ID from the previous step.
+## Browser-Use Mode
 
-4. Apply the schema locally:
-   ```bash
-   npx wrangler d1 execute table-app-db --local --file=src/schema.sql
-   ```
+For OpenClaw agents using browser control, append `?agent=true`:
 
-5. Run the dev server:
-   ```bash
-   pnpm dev
-   ```
+```
+http://localhost:3000/?agent=true
+```
 
-## Deploy
+This activates an agent-friendly UI with:
+- Explicit "Edit" button per row (opens a labeled form) instead of click-to-edit cells
+- Larger click targets for reliable interaction
+- All the same data — just explicit controls instead of implicit ones
 
-1. Apply the schema to production:
-   ```bash
-   npx wrangler d1 execute table-app-db --file=src/schema.sql
-   ```
+The human UI stays unchanged — click any cell to edit inline, all the usual interactions.
 
-2. Deploy the worker:
-   ```bash
-   pnpm deploy
-   ```
+## Features
+
+- Create, edit, and delete rows
+- Column sorting (click headers)
+- Per-column filtering with debounce
+- Pagination with configurable page size
+- CSV export
+- SQLite persistence (auto-creates schema on first run)
+- Dual-mode UI: human-optimized + browser-use-optimized
+
+## File Structure
+
+```
+src/
+  index.ts    — Hono routes + Node.js server
+  html.ts     — Full HTML/CSS/JS (dual-mode UI)
+  db.ts       — SQLite wrapper (better-sqlite3)
+  schema.sql  — Database schema
+```
+
+## How Clawnify Uses This
+
+Clawnify's app builder uses this template as a starting point when users request a data table app. The `db.ts` file is swapped with a D1 adapter, the code is bundled with esbuild, and deployed to Workers for Platforms. The rest of the app stays identical.

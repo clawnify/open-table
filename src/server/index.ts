@@ -1,53 +1,28 @@
 import { Hono } from "hono";
-import { getHtml } from "./html";
+import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { query, get, run } from "./db";
 
-type Env = {
-  Bindings: {
-    DB: D1Database;
-  };
-};
-
-const app = new Hono<Env>();
+const app = new Hono();
 
 const ALLOWED_COLUMNS = [
-  "id",
-  "name",
-  "status",
-  "category",
-  "value",
-  "notes",
-  "created_at",
-  "updated_at",
+  "id", "name", "status", "category", "value", "notes", "created_at", "updated_at",
 ];
 
-// Serve HTML
-app.get("/", (c) => {
-  return c.html(getHtml());
-});
-
 // List rows with pagination, sorting, filtering
-app.get("/api/rows", async (c) => {
+app.get("/api/rows", (c) => {
   try {
     const page = Math.max(1, parseInt(c.req.query("page") || "1", 10));
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(c.req.query("limit") || "25", 10))
-    );
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query("limit") || "25", 10)));
     const offset = (page - 1) * limit;
 
-    // Sorting
     let sortCol = c.req.query("sort") || "id";
-    if (!ALLOWED_COLUMNS.includes(sortCol)) {
-      sortCol = "id";
-    }
+    if (!ALLOWED_COLUMNS.includes(sortCol)) sortCol = "id";
     let order = (c.req.query("order") || "desc").toLowerCase();
-    if (order !== "asc" && order !== "desc") {
-      order = "desc";
-    }
+    if (order !== "asc" && order !== "desc") order = "desc";
 
-    // Filtering
     const whereClauses: string[] = [];
-    const whereParams: string[] = [];
+    const whereParams: unknown[] = [];
 
     for (const col of ALLOWED_COLUMNS) {
       const filterVal = c.req.query("filter_" + col);
@@ -57,37 +32,22 @@ app.get("/api/rows", async (c) => {
       }
     }
 
-    const whereSQL =
-      whereClauses.length > 0 ? " WHERE " + whereClauses.join(" AND ") : "";
+    const whereSQL = whereClauses.length > 0 ? " WHERE " + whereClauses.join(" AND ") : "";
 
-    // Count total
-    const countResult = await c.env.DB.prepare(
-      "SELECT COUNT(*) as total FROM items" + whereSQL
-    )
-      .bind(...whereParams)
-      .first<{ total: number }>();
-
+    const countResult = get<{ total: number }>(
+      "SELECT COUNT(*) as total FROM items" + whereSQL,
+      ...whereParams,
+    );
     const total = countResult?.total || 0;
 
-    // Fetch rows
-    const rowsResult = await c.env.DB.prepare(
-      "SELECT * FROM items" +
-        whereSQL +
-        " ORDER BY " +
-        sortCol +
-        " " +
-        order +
-        " LIMIT ? OFFSET ?"
-    )
-      .bind(...whereParams, limit, offset)
-      .all();
-
-    return c.json({
-      rows: rowsResult.results || [],
-      total,
-      page,
+    const rows = query(
+      "SELECT * FROM items" + whereSQL + " ORDER BY " + sortCol + " " + order + " LIMIT ? OFFSET ?",
+      ...whereParams,
       limit,
-    });
+      offset,
+    );
+
+    return c.json({ rows, total, page, limit });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return c.json({ error: message }, 500);
@@ -108,13 +68,13 @@ app.post("/api/rows", async (c) => {
       return c.json({ error: "Name is required" }, 400);
     }
 
-    const result = await c.env.DB.prepare(
-      "INSERT INTO items (name, status, category, value, notes) VALUES (?, ?, ?, ?, ?) RETURNING *"
-    )
-      .bind(name, status, category, value, notes)
-      .first();
+    run(
+      "INSERT INTO items (name, status, category, value, notes) VALUES (?, ?, ?, ?, ?)",
+      name, status, category, value, notes,
+    );
 
-    return c.json({ row: result }, 201);
+    const inserted = get("SELECT * FROM items WHERE rowid = last_insert_rowid()");
+    return c.json({ row: inserted }, 201);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return c.json({ error: message }, 500);
@@ -125,13 +85,11 @@ app.post("/api/rows", async (c) => {
 app.put("/api/rows/:id", async (c) => {
   try {
     const id = parseInt(c.req.param("id"), 10);
-    if (isNaN(id)) {
-      return c.json({ error: "Invalid ID" }, 400);
-    }
+    if (isNaN(id)) return c.json({ error: "Invalid ID" }, 400);
 
     const body = await c.req.json();
     const setClauses: string[] = [];
-    const setParams: (string | number)[] = [];
+    const setParams: unknown[] = [];
 
     const updatable = ["name", "status", "category", "value", "notes"];
     for (const col of updatable) {
@@ -148,19 +106,17 @@ app.put("/api/rows/:id", async (c) => {
     setClauses.push("updated_at = datetime('now')");
     setParams.push(id);
 
-    const result = await c.env.DB.prepare(
-      "UPDATE items SET " +
-        setClauses.join(", ") +
-        " WHERE id = ? RETURNING *"
-    )
-      .bind(...setParams)
-      .first();
+    const result = run(
+      "UPDATE items SET " + setClauses.join(", ") + " WHERE id = ?",
+      ...setParams,
+    );
 
-    if (!result) {
+    if (result.changes === 0) {
       return c.json({ error: "Row not found" }, 404);
     }
 
-    return c.json({ row: result });
+    const updated = get("SELECT * FROM items WHERE id = ?", id);
+    return c.json({ row: updated });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return c.json({ error: message }, 500);
@@ -168,20 +124,14 @@ app.put("/api/rows/:id", async (c) => {
 });
 
 // Delete row
-app.delete("/api/rows/:id", async (c) => {
+app.delete("/api/rows/:id", (c) => {
   try {
     const id = parseInt(c.req.param("id"), 10);
-    if (isNaN(id)) {
-      return c.json({ error: "Invalid ID" }, 400);
-    }
+    if (isNaN(id)) return c.json({ error: "Invalid ID" }, 400);
 
-    const result = await c.env.DB.prepare(
-      "DELETE FROM items WHERE id = ? RETURNING id"
-    )
-      .bind(id)
-      .first();
+    const result = run("DELETE FROM items WHERE id = ?", id);
 
-    if (!result) {
+    if (result.changes === 0) {
       return c.json({ error: "Row not found" }, 404);
     }
 
@@ -193,22 +143,12 @@ app.delete("/api/rows/:id", async (c) => {
 });
 
 // CSV export
-app.get("/api/export/csv", async (c) => {
+app.get("/api/export/csv", (c) => {
   try {
-    const result = await c.env.DB.prepare(
-      "SELECT * FROM items ORDER BY id DESC"
-    ).all();
+    const rows = query("SELECT * FROM items ORDER BY id DESC");
 
-    const rows = result.results || [];
     const headers = [
-      "id",
-      "name",
-      "status",
-      "category",
-      "value",
-      "notes",
-      "created_at",
-      "updated_at",
+      "id", "name", "status", "category", "value", "notes", "created_at", "updated_at",
     ];
 
     let csv = headers.join(",") + "\n";
@@ -234,5 +174,15 @@ app.get("/api/export/csv", async (c) => {
     return c.json({ error: message }, 500);
   }
 });
+
+// Production: serve Vite build output
+if (process.env.NODE_ENV === "production") {
+  app.use("/*", serveStatic({ root: "./dist" }));
+  app.get("*", serveStatic({ root: "./dist", path: "index.html" }));
+}
+
+const port = parseInt(process.env.PORT || "3002", 10);
+console.log(`Table API running at http://localhost:${port}`);
+serve({ fetch: app.fetch, port });
 
 export default app;
