@@ -47,8 +47,10 @@ export function TableTabs() {
   };
 
   const handleCreate = () => {
-    const name = newName.trim() || "New Table";
-    createTable(name).catch((err) => setError((err as Error).message));
+    const name = newName.trim();
+    if (name) {
+      createTable(name).catch((err) => setError((err as Error).message));
+    }
     setNewName("");
     setShowNewInput(false);
   };
@@ -101,9 +103,9 @@ export function TableTabs() {
             placeholder="Table name"
             value={newName}
             onInput={(e) => setNewName((e.target as HTMLInputElement).value)}
-            onBlur={handleCreate}
+            onBlur={() => { setShowNewInput(false); setNewName(""); }}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreate();
+              if (e.key === "Enter") { e.preventDefault(); handleCreate(); }
               if (e.key === "Escape") { setShowNewInput(false); setNewName(""); }
             }}
           />
