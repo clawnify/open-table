@@ -1,32 +1,33 @@
-export interface Row {
-  id: number;
+export interface TableDef {
+  id: string;
   name: string;
-  status: string;
-  category: string;
-  value: number;
-  notes: string;
+  position: number;
+  column_count?: number;
+  row_count?: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface Column {
-  key: keyof Row;
-  label: string;
-  type: "text" | "number" | "readonly";
+export interface ColumnDef {
+  id: string;
+  table_id: string;
+  name: string;
+  type: "text" | "number";
+  position: number;
+  created_at: string;
+  updated_at: string;
 }
 
-export const COLUMNS: Column[] = [
-  { key: "name", label: "Name", type: "text" },
-  { key: "status", label: "Status", type: "text" },
-  { key: "category", label: "Category", type: "text" },
-  { key: "value", label: "Value", type: "number" },
-  { key: "notes", label: "Notes", type: "text" },
-  { key: "created_at", label: "Created", type: "readonly" },
-  { key: "updated_at", label: "Updated", type: "readonly" },
-];
+export interface RowData {
+  id: number;
+  table_id: string;
+  data: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface TableState {
-  rows: Row[];
+  rows: RowData[];
   total: number;
   page: number;
   limit: number;

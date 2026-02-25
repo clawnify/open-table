@@ -30,6 +30,123 @@ body {
   padding: 24px 16px;
 }
 
+/* ── Table Tabs ───────────────────────────────────────────────────── */
+
+.table-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.table-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  border-radius: 6px 6px 0 0;
+  user-select: none;
+}
+
+.table-tab:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+
+.table-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--card-bg);
+  font-weight: 600;
+}
+
+.table-tab.add-tab {
+  padding: 6px 10px;
+  color: var(--text-secondary);
+}
+.table-tab.add-tab:hover {
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.tab-rename-input {
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  outline: none;
+  width: 120px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.tab-name {
+  pointer-events: none;
+}
+
+.tab-agent-actions {
+  display: none;
+  margin-left: auto;
+  gap: 4px;
+  align-items: center;
+  padding-left: 12px;
+}
+[data-agent] .tab-agent-actions { display: flex !important; }
+
+/* Tab context menu */
+.tab-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  padding: 4px;
+  min-width: 140px;
+}
+
+.tab-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: var(--font);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.tab-context-menu button:hover {
+  background: var(--row-hover);
+}
+
+.tab-context-menu button.danger {
+  color: var(--danger);
+}
+.tab-context-menu button.danger:hover {
+  background: #fef2f2;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────── */
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -39,6 +156,8 @@ body {
 
 .toolbar h1 { font-size: 22px; font-weight: 700; }
 .toolbar-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── Card / Table ─────────────────────────────────────────────────── */
 
 .card {
   background: var(--card-bg);
@@ -70,6 +189,7 @@ th {
 th.sortable { cursor: pointer; }
 th.sortable:hover { color: var(--primary); }
 th .sort-icon { margin-left: 4px; font-size: 10px; }
+th.dragging { opacity: 0.5; }
 
 td {
   padding: 8px 12px;
@@ -79,6 +199,129 @@ td {
 
 tr:nth-child(even) td { background: var(--row-alt); }
 tr:hover td { background: var(--row-hover); }
+
+/* ── Column Header ────────────────────────────────────────────────── */
+
+.col-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drag-handle {
+  color: var(--border);
+  cursor: grab;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+th:hover .drag-handle { opacity: 1; }
+
+.col-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.col-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--border);
+  border-radius: 3px;
+  opacity: 0.7;
+}
+
+.col-rename-input {
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  outline: none;
+  width: 100px;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.add-col-header {
+  width: 40px;
+  text-align: center;
+}
+
+.add-col-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.add-col-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+/* Agent column action buttons */
+.agent-col-actions td {
+  padding: 4px 8px;
+  background: #f0f4ff;
+  border-bottom: 1px solid var(--border);
+}
+
+.agent-col-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* Column context menu */
+.col-context-menu {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  padding: 4px;
+  min-width: 160px;
+}
+
+.col-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: var(--font);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.col-context-menu button:hover {
+  background: var(--row-hover);
+}
+
+.col-context-menu button.danger {
+  color: var(--danger);
+}
+.col-context-menu button.danger:hover {
+  background: #fef2f2;
+}
+
+/* ── Cell Editing ─────────────────────────────────────────────────── */
 
 .cell-value {
   display: block;
@@ -101,6 +344,8 @@ tr:hover td { background: var(--row-hover); }
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
+/* ── Filter Row ───────────────────────────────────────────────────── */
+
 .filter-row td {
   padding: 4px 8px;
   background: var(--bg);
@@ -118,6 +363,8 @@ tr:hover td { background: var(--row-hover); }
   min-height: 28px;
 }
 .filter-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+
+/* ── Actions ──────────────────────────────────────────────────────── */
 
 .actions-cell {
   white-space: nowrap;
@@ -156,6 +403,8 @@ tr:hover td { background: var(--row-hover); }
 
 .btn-sm { padding: 3px 8px; font-size: 11px; min-height: 28px; }
 
+/* ── Pagination ───────────────────────────────────────────────────── */
+
 .pagination {
   display: flex;
   align-items: center;
@@ -180,6 +429,8 @@ tr:hover td { background: var(--row-hover); }
   border-radius: 4px;
   background: #fff;
 }
+
+/* ── Misc ─────────────────────────────────────────────────────────── */
 
 .confirm-delete {
   display: inline-flex;
@@ -226,11 +477,13 @@ tr:hover td { background: var(--row-hover); }
 .add-row-form td { background: #f0fdf4; }
 .add-row-form label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px; color: var(--text-secondary); }
 
-/* Dual-mode visibility */
+/* ── Dual-mode visibility (agent vs human) ────────────────────────── */
+
 [data-agent] .human-only { display: none !important; }
 .agent-only { display: none !important; }
 [data-agent] .agent-only { display: inline-flex !important; }
-[data-agent] .agent-only-block { display: block !important; }
+.agent-only-block { display: none !important; }
+[data-agent] .agent-only-block { display: table-row !important; }
 
 /* No click-to-edit in agent mode */
 [data-agent] .cell-value { cursor: default; }
@@ -240,3 +493,5 @@ tr:hover td { background: var(--row-hover); }
 [data-agent] .btn { min-height: 40px; padding: 8px 14px; }
 [data-agent] .btn-sm { min-height: 36px; padding: 6px 10px; }
 [data-agent] .filter-input { min-height: 36px; }
+[data-agent] .table-tab { padding: 8px 16px; font-size: 14px; }
+[data-agent] .add-col-btn { width: 36px; height: 36px; }

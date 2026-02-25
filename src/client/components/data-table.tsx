@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useTable } from "../context";
+import { TableTabs } from "./table-tabs";
 import { Toolbar } from "./toolbar";
 import { TableHeader } from "./table-header";
 import { TableRow } from "./table-row";
@@ -8,11 +9,15 @@ import { Pagination } from "./pagination";
 import { ErrorBanner } from "./error-banner";
 
 export function DataTable() {
-  const { state, loading } = useTable();
+  const { columns, state, loading } = useTable();
   const [adding, setAdding] = useState(false);
+
+  // +3 for: # column, add-col column, actions column
+  const totalCols = columns.length + 3;
 
   return (
     <div class="container">
+      <TableTabs />
       <Toolbar onAddRow={() => setAdding(true)} />
       <ErrorBanner />
       <div class="card">
@@ -23,11 +28,11 @@ export function DataTable() {
               {adding && <AddRowForm onClose={() => setAdding(false)} />}
               {loading && state.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} class="loading-text">Loading...</td>
+                  <td colSpan={totalCols} class="loading-text">Loading...</td>
                 </tr>
               ) : state.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} class="empty-text">No items found. Add one to get started.</td>
+                  <td colSpan={totalCols} class="empty-text">No rows yet. Add one to get started.</td>
                 </tr>
               ) : (
                 state.rows.map((row) => <TableRow key={row.id} row={row} />)

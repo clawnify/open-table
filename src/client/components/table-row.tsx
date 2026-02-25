@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from "preact/hooks";
 import { Pencil, Trash2 } from "lucide-preact";
 import { useTable } from "../context";
-import { COLUMNS } from "../types";
-import type { Row } from "../types";
+import type { RowData } from "../types";
 
 interface TableRowProps {
-  row: Row;
+  row: RowData;
 }
 
 export function TableRow({ row }: TableRowProps) {
-  const { isAgent, updateRow, deleteRow, setError } = useTable();
+  const { columns, isAgent, updateRow, deleteRow, setError } = useTable();
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editingRow, setEditingRow] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -23,10 +22,10 @@ export function TableRow({ row }: TableRowProps) {
     }
   }, [editingCell]);
 
-  const saveCellEdit = (key: string, value: string) => {
-    const col = COLUMNS.find((c) => c.key === key);
+  const saveCellEdit = (colId: string, value: string) => {
+    const col = columns.find((c) => c.id === colId);
     const parsed = col?.type === "number" ? parseFloat(value) || 0 : value;
-    updateRow(row.id, { [key]: parsed } as Partial<Row>).catch((err) =>
+    updateRow(row.id, { [colId]: parsed }).catch((err) =>
       setError((err as Error).message),
     );
     setEditingCell(null);
@@ -34,23 +33,20 @@ export function TableRow({ row }: TableRowProps) {
 
   const startRowEdit = () => {
     const values: Record<string, string> = {};
-    for (const col of COLUMNS) {
-      if (col.type !== "readonly") {
-        values[col.key] = String(row[col.key] ?? "");
-      }
+    for (const col of columns) {
+      values[col.id] = String(row.data[col.id] ?? "");
     }
     setEditValues(values);
     setEditingRow(true);
   };
 
   const saveRowEdit = () => {
-    const body: Record<string, unknown> = {};
-    for (const col of COLUMNS) {
-      if (col.type === "readonly") continue;
-      const val = editValues[col.key];
-      body[col.key] = col.type === "number" ? parseFloat(val) || 0 : val;
+    const data: Record<string, unknown> = {};
+    for (const col of columns) {
+      const val = editValues[col.id];
+      data[col.id] = col.type === "number" ? parseFloat(val) || 0 : val;
     }
-    updateRow(row.id, body as Partial<Row>)
+    updateRow(row.id, data)
       .then(() => setEditingRow(false))
       .catch((err) => setError((err as Error).message));
   };
@@ -62,63 +58,64 @@ export function TableRow({ row }: TableRowProps) {
     });
   };
 
+  const firstColName = columns[0]?.name || "row";
+  const rowLabel = String(row.data[columns[0]?.id] ?? row.id);
+
   return (
     <>
       <tr>
         <td style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{row.id}</td>
-        {COLUMNS.map((col) => {
-          const val = String(row[col.key] ?? "");
+        {columns.map((col) => {
+          const val = String(row.data[col.id] ?? "");
 
           // Human mode: inline cell editing
-          if (!isAgent && editingCell === col.key) {
+          if (!isAgent && editingCell === col.id) {
             return (
-              <td key={col.key}>
+              <td key={col.id}>
                 <input
                   ref={cellInputRef}
                   class="cell-input"
                   type={col.type === "number" ? "number" : "text"}
                   value={val}
                   data-row-id={row.id}
-                  data-col={col.key}
+                  data-col={col.id}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") saveCellEdit(col.key, (e.target as HTMLInputElement).value);
+                    if (e.key === "Enter") saveCellEdit(col.id, (e.target as HTMLInputElement).value);
                     if (e.key === "Escape") setEditingCell(null);
                   }}
                   onBlur={(e) => {
-                    setTimeout(() => saveCellEdit(col.key, (e.target as HTMLInputElement).value), 100);
+                    setTimeout(() => saveCellEdit(col.id, (e.target as HTMLInputElement).value), 100);
                   }}
-                  aria-label={`Edit ${col.label}`}
+                  aria-label={`Edit ${col.name}`}
                 />
               </td>
             );
           }
 
-          // Clickable cell (human mode, non-readonly)
-          if (!isAgent && col.type !== "readonly") {
+          // Clickable cell (human mode)
+          if (!isAgent) {
             return (
-              <td key={col.key}>
+              <td key={col.id}>
                 <span
                   class="cell-value human-only"
-                  onClick={() => setEditingCell(col.key)}
+                  onClick={() => setEditingCell(col.id)}
                   title="Click to edit"
                 >
                   {val || "\u00A0"}
                 </span>
-                {/* Agent sees plain text */}
                 <span class="agent-only" style={{ display: "none" }}>{val}</span>
               </td>
             );
           }
 
-          // Readonly or agent mode plain text
+          // Agent mode: plain text
           return (
-            <td key={col.key}>
-              <span style={{ fontSize: col.type === "readonly" ? "12px" : undefined, color: col.type === "readonly" ? "var(--text-secondary)" : undefined }}>
-                {val}
-              </span>
+            <td key={col.id}>
+              <span>{val}</span>
             </td>
           );
         })}
+        <td /> {/* add-col spacer */}
         <td>
           <div class="actions-cell">
             {confirmDelete ? (
@@ -134,7 +131,7 @@ export function TableRow({ row }: TableRowProps) {
             ) : (
               <>
                 {isAgent && !editingRow && (
-                  <button class="btn btn-sm agent-only" onClick={startRowEdit} aria-label={`Edit row ${row.name}`}>
+                  <button class="btn btn-sm agent-only" onClick={startRowEdit} aria-label={`Edit row ${rowLabel}`}>
                     <Pencil size={12} /> Edit
                   </button>
                 )}
@@ -146,7 +143,7 @@ export function TableRow({ row }: TableRowProps) {
                 <button
                   class="btn btn-sm btn-danger"
                   onClick={() => setConfirmDelete(true)}
-                  aria-label={`Delete row ${row.name}`}
+                  aria-label={`Delete row ${rowLabel}`}
                 >
                   <Trash2 size={12} /> Delete
                 </button>
@@ -159,22 +156,22 @@ export function TableRow({ row }: TableRowProps) {
       {/* Agent mode: edit form row below */}
       {isAgent && editingRow && (
         <tr class="edit-form-row">
-          <td colSpan={COLUMNS.length + 2}>
+          <td colSpan={columns.length + 3}>
             <div class="edit-form-grid">
-              {COLUMNS.filter((c) => c.type !== "readonly").map((col) => (
-                <div key={col.key}>
-                  <label for={`edit-row-${row.id}-${col.key}`}>{col.label}</label>
+              {columns.map((col) => (
+                <div key={col.id}>
+                  <label for={`edit-row-${row.id}-${col.id}`}>{col.name}</label>
                   <input
-                    id={`edit-row-${row.id}-${col.key}`}
+                    id={`edit-row-${row.id}-${col.id}`}
                     type={col.type === "number" ? "number" : "text"}
-                    value={editValues[col.key] || ""}
+                    value={editValues[col.id] || ""}
                     onInput={(e) =>
                       setEditValues((prev) => ({
                         ...prev,
-                        [col.key]: (e.target as HTMLInputElement).value,
+                        [col.id]: (e.target as HTMLInputElement).value,
                       }))
                     }
-                    aria-label={`${col.label} for ${row.name}`}
+                    aria-label={`${col.name} for row ${rowLabel}`}
                   />
                 </div>
               ))}
