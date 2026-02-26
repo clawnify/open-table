@@ -67,13 +67,21 @@ export function useTableState(isAgent: boolean): TableContextValue {
   }, [fetchRows]);
 
   // ── Init: load tables, set active, load columns + rows ──
+  // Auto-create a default table if none exist so the UI is never empty.
+  const ensureTable = useCallback(async (tbls: TableDef[]) => {
+    if (tbls.length === 0) {
+      await api("POST", "/api/tables", { name: "Table 1" });
+      tbls = (await api<{ tables: TableDef[] }>("GET", "/api/tables")).tables;
+      setTables(tbls);
+    }
+    if (tbls.length > 0 && !activeTableRef.current) {
+      setActiveTableId(tbls[0].id);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchTables().then((tbls) => {
-      if (tbls.length > 0 && !activeTableRef.current) {
-        setActiveTableId(tbls[0].id);
-      }
-    }).catch((err) => setError((err as Error).message));
-  }, [fetchTables]);
+    fetchTables().then(ensureTable).catch((err) => setError((err as Error).message));
+  }, [fetchTables, ensureTable]);
 
   // When active table changes, reset state and fetch columns + rows
   useEffect(() => {
@@ -116,8 +124,15 @@ export function useTableState(isAgent: boolean): TableContextValue {
 
   const deleteTable = useCallback(async (id: string) => {
     await api("DELETE", `/api/tables/${id}`);
+    if (activeTableRef.current === id) setActiveTableId(null);
     const tbls = await fetchTables();
-    if (activeTableRef.current === id && tbls.length > 0) {
+    if (tbls.length === 0) {
+      // Auto-create a fresh table so the UI is never empty
+      await api("POST", "/api/tables", { name: "Table 1" });
+      const fresh = (await api<{ tables: TableDef[] }>("GET", "/api/tables")).tables;
+      setTables(fresh);
+      if (fresh.length > 0) setActiveTableId(fresh[0].id);
+    } else if (!activeTableRef.current) {
       setActiveTableId(tbls[0].id);
     }
   }, [fetchTables]);
