@@ -341,6 +341,127 @@ app.delete("/api/tables/:tid/rows/:id", async (c) => {
   }
 });
 
+// OpenAPI spec
+app.get("/openapi.json", (c) => {
+  const tidParam = { name: "tid", in: "path", required: true, schema: { type: "string" }, description: "Table ID (UUID)" };
+  return c.json({
+    openapi: "3.0.0",
+    info: { title: "Table App", version: "1.0.0" },
+    paths: {
+      "/api/tables": {
+        get: {
+          summary: "List all tables with column and row counts",
+          responses: { "200": { description: "Array of tables", content: { "application/json": { schema: { type: "object", properties: { tables: { type: "array", items: { $ref: "#/components/schemas/Table" } } } } } } } },
+        },
+        post: {
+          summary: "Create a new table",
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: {
+            name: { type: "string" },
+            columns: { type: "array", items: { type: "object", properties: { name: { type: "string" }, type: { type: "string", enum: ["text", "number"] } } }, description: "Optional initial columns. Defaults to one 'Name' text column." },
+          }, required: ["name"] } } } },
+          responses: { "201": { description: "Created table" } },
+        },
+      },
+      "/api/tables/{id}": {
+        put: {
+          summary: "Rename a table",
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { name: { type: "string" } }, required: ["name"] } } } },
+          responses: { "200": { description: "Updated table" } },
+        },
+        delete: {
+          summary: "Delete a table and all its columns/rows",
+          parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+          responses: { "200": { description: "{ ok: true }" } },
+        },
+      },
+      "/api/tables/{tid}/columns": {
+        get: {
+          summary: "List columns for a table",
+          parameters: [tidParam],
+          responses: { "200": { description: "Array of columns", content: { "application/json": { schema: { type: "object", properties: { columns: { type: "array", items: { $ref: "#/components/schemas/Column" } } } } } } } },
+        },
+        post: {
+          summary: "Add a column to a table",
+          parameters: [tidParam],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { name: { type: "string" }, type: { type: "string", enum: ["text", "number"] } } } } } },
+          responses: { "201": { description: "Created column" } },
+        },
+      },
+      "/api/tables/{tid}/columns/{id}": {
+        put: {
+          summary: "Update a column name or type",
+          parameters: [tidParam, { name: "id", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { name: { type: "string" }, type: { type: "string", enum: ["text", "number"] } } } } } },
+          responses: { "200": { description: "Updated column" } },
+        },
+        delete: {
+          summary: "Delete a column and remove its data from all rows",
+          parameters: [tidParam, { name: "id", in: "path", required: true, schema: { type: "string" } }],
+          responses: { "200": { description: "{ ok: true }" } },
+        },
+      },
+      "/api/tables/{tid}/columns/reorder": {
+        put: {
+          summary: "Reorder columns",
+          parameters: [tidParam],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { ids: { type: "array", items: { type: "string" }, description: "Column IDs in desired order" } }, required: ["ids"] } } } },
+          responses: { "200": { description: "Reordered columns" } },
+        },
+      },
+      "/api/tables/{tid}/rows": {
+        get: {
+          summary: "List rows with pagination, sorting, and filtering",
+          parameters: [
+            tidParam,
+            { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+            { name: "limit", in: "query", schema: { type: "integer", default: 25, maximum: 100 } },
+            { name: "sort", in: "query", schema: { type: "string" }, description: "Column ID or 'id'/'created_at'/'updated_at'" },
+            { name: "order", in: "query", schema: { type: "string", enum: ["asc", "desc"], default: "desc" } },
+          ],
+          responses: { "200": { description: "Paginated rows", content: { "application/json": { schema: { type: "object", properties: {
+            rows: { type: "array", items: { $ref: "#/components/schemas/Row" } },
+            total: { type: "integer" }, page: { type: "integer" }, limit: { type: "integer" },
+          } } } } } },
+        },
+        post: {
+          summary: "Create a new row",
+          parameters: [tidParam],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { data: { type: "object", description: "Key-value pairs where keys are column IDs" } } } } } },
+          responses: { "201": { description: "Created row" } },
+        },
+      },
+      "/api/tables/{tid}/rows/{id}": {
+        put: {
+          summary: "Update a row (merges data)",
+          parameters: [tidParam, { name: "id", in: "path", required: true, schema: { type: "integer" } }],
+          requestBody: { required: true, content: { "application/json": { schema: { type: "object", properties: { data: { type: "object", description: "Key-value pairs to merge into existing data" } } } } } },
+          responses: { "200": { description: "Updated row" } },
+        },
+        delete: {
+          summary: "Delete a row",
+          parameters: [tidParam, { name: "id", in: "path", required: true, schema: { type: "integer" } }],
+          responses: { "200": { description: "{ ok: true }" } },
+        },
+      },
+      "/api/tables/{tid}/export/csv": {
+        get: {
+          summary: "Export table rows as CSV",
+          parameters: [tidParam],
+          responses: { "200": { description: "CSV file download", content: { "text/csv": {} } } },
+        },
+      },
+    },
+    components: {
+      schemas: {
+        Table: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, position: { type: "integer" }, column_count: { type: "integer" }, row_count: { type: "integer" }, created_at: { type: "string" }, updated_at: { type: "string" } } },
+        Column: { type: "object", properties: { id: { type: "string" }, table_id: { type: "string" }, name: { type: "string" }, type: { type: "string", enum: ["text", "number"] }, position: { type: "integer" }, created_at: { type: "string" }, updated_at: { type: "string" } } },
+        Row: { type: "object", properties: { id: { type: "integer" }, table_id: { type: "string" }, data: { type: "object", description: "Column ID → value pairs" }, created_at: { type: "string" }, updated_at: { type: "string" } } },
+      },
+    },
+  });
+});
+
 // CSV export
 app.get("/api/tables/:tid/export/csv", async (c) => {
   try {
