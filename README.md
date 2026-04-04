@@ -25,8 +25,8 @@ Unlike Clay or Airtable, this runs entirely on your own infrastructure with no A
 ## Quickstart
 
 ```bash
-git clone https://github.com/clawnify/table-app.git
-cd table-app
+git clone https://github.com/clawnify/open-table.git
+cd open-table
 pnpm install
 pnpm run dev
 ```
