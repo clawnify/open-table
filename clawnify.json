@@ -1,0 +1,10 @@
+{
+  "$schema": "https://app.clawnify.com/schema/v1/clawnify.json",
+  "name": "Open Table",
+  "description": "",
+  "app": {
+    "framework": "preact+hono",
+    "database": true,
+    "storage": false
+  }
+}
