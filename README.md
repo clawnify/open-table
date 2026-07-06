@@ -1,10 +1,10 @@
+<img src="readme-banner.png" alt="Open Table preview" width="100%" />
+
 # OpenClaw Table App: The Open-Source Clay Alternative for SaaS
 
 A flexible, multi-table data UI for building SaaS dashboards, CRM tools, and spreadsheet-like apps. Part of the [OpenClaw](https://github.com/openclaw/openclaw) ecosystem. Zero cloud dependencies — runs locally with SQLite.
 
 Built with **Preact + Hono + SQLite**. Ships with a dual-mode UI: one for humans (click-to-edit, drag-to-reorder) and one for AI agents (explicit buttons, large targets).
-
-<img width="1024" height="591" alt="Image" src="https://github.com/user-attachments/assets/0d8c2eef-94e8-45ba-b6cd-a4cd3185134e" />
 
 ## What Is It?
 
