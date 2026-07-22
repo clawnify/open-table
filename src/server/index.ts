@@ -1,13 +1,12 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { initDB, query, get, run } from "./db.js";
+import { createApp, createRoute, z } from "@clawnify/app";
+import { query, get, run } from "./db.js";
 
 type Env = { Bindings: { DB: D1Database } };
 
-const app = new OpenAPIHono<Env>();
-
-app.use("*", async (c, next) => {
-  initDB(c.env);
-  await next();
+const app = createApp<Env>({
+  title: "Table App",
+  version: "1.0.0",
+  description: "A dynamic table management API with CRUD operations for tables, columns, and rows.",
 });
 
 // ── Shared Schemas ─────────────────────────────────────────────────
@@ -710,13 +709,6 @@ app.openapi(exportCsv, async (c) => {
   } catch (err: unknown) {
     return c.json({ error: (err as Error).message }, 500);
   }
-});
-
-// ── OpenAPI Doc ────────────────────────────────────────────────────
-
-app.doc("/openapi.json", {
-  openapi: "3.0.0",
-  info: { title: "Table App", version: "1.0.0", description: "A dynamic table management API with CRUD operations for tables, columns, and rows." },
 });
 
 export default app;
