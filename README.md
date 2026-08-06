@@ -2,6 +2,8 @@
 
 # OpenClaw Table App: The Open-Source Clay Alternative for SaaS
 
+[![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/open-table)
+
 A flexible, multi-table data UI for building SaaS dashboards, CRM tools, and spreadsheet-like apps. Part of the [OpenClaw](https://github.com/openclaw/openclaw) ecosystem. Zero cloud dependencies — runs locally with SQLite.
 
 Built with **Preact + Hono + SQLite**. Ships with a dual-mode UI: one for humans (click-to-edit, drag-to-reorder) and one for AI agents (explicit buttons, large targets).
