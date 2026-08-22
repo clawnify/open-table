@@ -1,5 +1,5 @@
 {
-  "name": "Table App",
+  "name": "OpenTable",
   "description": "Multi-table data management UI with dynamic columns, inline editing, sorting, filtering, pagination, and CSV export. Like Airtable or Clay. Best for spreadsheet-like apps, data dashboards, inventory tracking, or any structured data CRUD.",
   "framework": "preact+hono",
   "files": [

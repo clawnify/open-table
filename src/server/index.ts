@@ -4,7 +4,7 @@ import { query, get, run } from "./db.js";
 type Env = { Bindings: { DB: D1Database } };
 
 const app = createApp<Env>({
-  title: "Table App",
+  title: "OpenTable",
   version: "1.0.0",
   description: "A dynamic table management API with CRUD operations for tables, columns, and rows.",
 });
