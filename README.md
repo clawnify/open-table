@@ -1,6 +1,6 @@
-<img src="readme-banner.png" alt="Open Table preview" width="100%" />
+<img src="readme-banner.png" alt="OpenTable preview" width="100%" />
 
-# OpenClaw Table App: The Open-Source Clay Alternative for SaaS
+# OpenTable: The Open-Source Clay Alternative for SaaS
 
 [![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/open-table)
 
@@ -10,7 +10,7 @@ Built with **Preact + Hono + SQLite**. Ships with a dual-mode UI: one for humans
 
 ## What Is It?
 
-Clawnify Table App is a production-ready table UI framework designed for the OpenClaw community. Think of it as an open-source Clay alternative — a data table you can self-host, customize, and embed in any SaaS product.
+Clawnify OpenTable is a production-ready table UI framework designed for the OpenClaw community. Think of it as an open-source Clay alternative — a data table you can self-host, customize, and embed in any SaaS product.
 
 Unlike Clay or Airtable, this runs entirely on your own infrastructure with no API keys, no vendor lock-in, and no per-seat pricing. Create multiple tables, define custom columns, sort/filter/paginate, and export to CSV — all out of the box.
 
