@@ -2,7 +2,7 @@
 
 # OpenTable: The Open-Source Clay Alternative for SaaS
 
-[![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/open-table)
+[![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/OpenTable)
 
 A flexible, multi-table data UI for building SaaS dashboards, CRM tools, and spreadsheet-like apps. Part of the [OpenClaw](https://github.com/openclaw/openclaw) ecosystem. Zero cloud dependencies — runs locally with SQLite.
 
@@ -29,7 +29,7 @@ Unlike Clay or Airtable, this runs entirely on your own infrastructure with no A
 ## Quickstart
 
 ```bash
-git clone https://github.com/clawnify/open-table.git
+git clone https://github.com/clawnify/OpenTable.git
 cd open-table
 pnpm install
 pnpm run dev
